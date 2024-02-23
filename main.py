@@ -2,7 +2,7 @@ import socket
 import threading
 import ipaddress
 
-COMMON_PORTS = [21, 22, 23, 25, 53, 80, 110, 443, 445, 3389]
+
 
 def scan_port(target_host, port):
     try:
@@ -15,28 +15,52 @@ def scan_port(target_host, port):
     except Exception as e:
         print(f"Error: {e}")
 
-def scan_host(target_host, ports):
+def scan_host(target_host, start_port, end_port):
     print(f"[*] Scanning {target_host}...")
-    for port in ports:
-        threading.Thread(target=scan_port, args=(target_host, port)).start()
+    for port in range(start_port, end_port + 1):
+        scan_port(target_host, port)
 
 def display_host_info(host):
     try:
         host_ip = socket.gethostbyname(host)
-        print(f"[*] Target Host: {host}")
+        print(f"[*] Domain: {host}")
         print(f"[*] IP Address: {host_ip}")
+        return host_ip
     except socket.gaierror:
         print("[!] Could not resolve hostname")
+        return None
 
 def main():
-    target_hosts = input("Enter the target host(s) to scan (comma-separated for multiple hosts): ").split(',')
-    start_port = int(input("Enter the starting port (press Enter for default 1): ") or 1)
-    end_port = int(input("Enter the ending port (press Enter for default 1024): ") or 1024)
+    print("\033[91m" + r"""
+ $$$$$$\  $$\    $$\  $$$$$$\  $$\   $$\ 
+$$  __$$\ $$ |   $$ |$$  __$$\ $$ | $$  |
+$$ /  $$ |$$ |   $$ |$$ /  $$ |$$ |$$  / 
+$$$$$$$$ |\$$\  $$  |$$ |  $$ |$$$$$  /  
+$$  __$$ | \$$\$$  / $$ |  $$ |$$  $$<   
+$$ |  $$ |  \$$$  /  $$ |  $$ |$$ |\$$\  
+$$ |  $$ |   \$  /    $$$$$$  |$$ | \$$\ 
+\__|  \__|    \_/     \______/ \__|  \__|
+                   
+                      𝙳𝚎𝚟𝚎𝚕𝚘𝚙𝚎𝚍 𝚋𝚢 𝚊𝚟𝚢𝚊𝚢𝚜𝚎𝚌
+                                         
+    """ + "\033[0m")
+    target_hosts = input("Enter the target host to scan: ").split(',')
+    start_port = int(input("Enter the starting port (default=1): ") or 1)
+    end_port = int(input("Enter the ending port (default=1024): ") or 1024)
 
     for host in target_hosts:
-        display_host_info(host.strip())
-        ports = range(start_port, end_port + 1)
-        scan_host(host.strip(), ports)
+        host = host.strip()
+        print("\n" + "="*50)
+        print(f"[^] Target Host: {host}")
+        print("="*50)
+        ip_address = display_host_info(host)
+        if ip_address:
+            try:
+                ipaddress.IPv4Address(ip_address)
+                scan_host(ip_address, start_port, end_port)
+            except ipaddress.AddressValueError:
+                print("[!] Invalid IPv4 address.")
+                continue
 
 if __name__ == "__main__":
     main()
